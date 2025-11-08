@@ -8,9 +8,8 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-    { id: 'projects', label: 'All Projects', icon: '📋' },
     { id: 'tasks', label: 'Tasks', icon: '✓' },
-    { id: 'managers', label: 'Managers', icon: '👥' },
+    { id: 'users', label: 'Manage Users', icon: '👥' },
     { id: 'analytics', label: 'Analytics', icon: '📈' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
   ];

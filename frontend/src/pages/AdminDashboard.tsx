@@ -6,6 +6,8 @@ import ProjectCard from '../components/ProjectCard/ProjectCard';
 import ProfileDropdown from '../components/ProfileDropdown/ProfileDropdown';
 import NewProjectForm from '../components/NewProjectForm/NewProjectForm';
 import ProjectDetail from '../components/ProjectDetail/ProjectDetail';
+import UserManagementPage from './UserManagementPage';
+import TaskView from './TaskView/TaskView';
 
 interface Project {
   id: number;
@@ -26,6 +28,8 @@ const AdminDashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [showTaskView, setShowTaskView] = useState(false);
+  const [taskViewProjectId, setTaskViewProjectId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -195,17 +199,41 @@ const AdminDashboard: React.FC = () => {
           </>
         )}
 
-        {activeSection === 'projects' && (
-          <div>
-            <h1>Projects Management</h1>
-            <p>Create and manage projects here.</p>
-          </div>
-        )}
+
 
         {activeSection === 'tasks' && (
           <div>
             <h1>Task Management</h1>
-            <p>Assign and track task execution.</p>
+            <p>Assign and track task execution across all projects.</p>
+            <div style={{ marginTop: '20px' }}>
+              <h3>Select a project to view tasks:</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px', marginTop: '16px' }}>
+                {dashboardData?.projects?.map((project: any) => (
+                  <div
+                    key={project.id}
+                    onClick={() => {
+                      setTaskViewProjectId(project.id);
+                      setShowTaskView(true);
+                    }}
+                    style={{
+                      padding: '16px',
+                      backgroundColor: 'white',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                  >
+                    <h4 style={{ margin: '0 0 8px 0' }}>{project.name}</h4>
+                    <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>
+                      {project.task_count} tasks • Manager: {project.manager_name}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -216,11 +244,8 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {activeSection === 'managers' && (
-          <div>
-            <h1>Managers</h1>
-            <p>Manage project managers and team leads.</p>
-          </div>
+        {activeSection === 'users' && (
+          <UserManagementPage />
         )}
         </div>
       </div>
@@ -235,6 +260,16 @@ const AdminDashboard: React.FC = () => {
         <ProjectDetail 
           projectId={selectedProjectId}
           onClose={() => setSelectedProjectId(null)}
+        />
+      )}
+      
+      {showTaskView && taskViewProjectId && (
+        <TaskView 
+          projectId={taskViewProjectId}
+          onClose={() => {
+            setShowTaskView(false);
+            setTaskViewProjectId(null);
+          }}
         />
       )}
     </div>

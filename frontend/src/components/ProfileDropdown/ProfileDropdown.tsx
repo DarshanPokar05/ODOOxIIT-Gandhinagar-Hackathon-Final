@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import ProfileModal from '../ProfileModal/ProfileModal';
 
 const ProfileDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const { user, logout } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -88,6 +90,7 @@ const ProfileDropdown: React.FC = () => {
             <button
               onClick={() => {
                 setIsOpen(false);
+                setShowProfileModal(true);
               }}
               style={{
                 width: '100%',
@@ -132,6 +135,11 @@ const ProfileDropdown: React.FC = () => {
           </div>
         </div>
       )}
+      
+      <ProfileModal 
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
     </div>
   );
 };

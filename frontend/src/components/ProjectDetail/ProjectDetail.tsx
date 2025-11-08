@@ -24,10 +24,62 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onClose }) => 
   const [loading, setLoading] = useState(true);
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [showTooltip, setShowTooltip] = useState<string | null>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [newTaskData, setNewTaskData] = useState({
+    title: '',
+    description: '',
+    assigned_to: '',
+    priority: 'medium',
+    deadline: '',
+    estimated_hours: '',
+    role: '',
+    status: 'pending'
+  });
 
   useEffect(() => {
     fetchProjectDetails();
+    fetchUsers();
   }, [projectId]);
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/users/managers', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:5000/api/tasks', {
+        ...newTaskData,
+        project_id: projectId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setShowNewTaskForm(false);
+      setNewTaskData({
+        title: '',
+        description: '',
+        assigned_to: '',
+        priority: 'medium',
+        deadline: '',
+        estimated_hours: '',
+        role: '',
+        status: 'pending'
+      });
+      fetchProjectDetails();
+    } catch (error) {
+      console.error('Error creating task:', error);
+    }
+  };
 
   const fetchProjectDetails = async () => {
     try {
@@ -138,7 +190,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onClose }) => 
                 fontSize: '14px'
               }}
             >
-              + Add Task
+              + New Task
             </button>
             <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' }}>×</button>
           </div>
@@ -292,30 +344,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onClose }) => 
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Tasks</h2>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button style={{
-                    padding: '6px 12px',
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
-                  }}>
-                    New Task
-                  </button>
-                  <button style={{
-                    padding: '6px 12px',
-                    backgroundColor: 'white',
-                    color: '#6b7280',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
-                  }}>
-                    Edit Task
-                  </button>
-                </div>
+
               </div>
               
               <div style={{ display: 'grid', gap: '12px' }}>
@@ -370,6 +399,203 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ projectId, onClose }) => 
           </div>
         </div>
       </div>
+      
+      {/* New Task Form */}
+      {showNewTaskForm && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            width: '500px',
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }}>
+            <h2 style={{ margin: '0 0 20px 0' }}>Create New Task</h2>
+            
+            <form onSubmit={handleCreateTask}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Title *</label>
+                <input
+                  type="text"
+                  value={newTaskData.title}
+                  onChange={(e) => setNewTaskData({ ...newTaskData, title: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Description</label>
+                <textarea
+                  value={newTaskData.description}
+                  onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Priority</label>
+                  <select
+                    value={newTaskData.priority}
+                    onChange={(e) => setNewTaskData({ ...newTaskData, priority: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Status</label>
+                  <select
+                    value={newTaskData.status}
+                    onChange={(e) => setNewTaskData({ ...newTaskData, status: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    <option value="pending">New</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="blocked">Blocked</option>
+                    <option value="completed">Done</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Assignee</label>
+                <select
+                  value={newTaskData.assigned_to}
+                  onChange={(e) => setNewTaskData({ ...newTaskData, assigned_to: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px'
+                  }}
+                >
+                  <option value="">Select Assignee</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.first_name} {user.last_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Deadline</label>
+                  <input
+                    type="date"
+                    value={newTaskData.deadline}
+                    onChange={(e) => setNewTaskData({ ...newTaskData, deadline: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px'
+                    }}
+                  />
+                </div>
+                
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Estimated Hours</label>
+                  <input
+                    type="number"
+                    value={newTaskData.estimated_hours}
+                    onChange={(e) => setNewTaskData({ ...newTaskData, estimated_hours: e.target.value })}
+                    step="0.5"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Role</label>
+                <input
+                  type="text"
+                  value={newTaskData.role}
+                  onChange={(e) => setNewTaskData({ ...newTaskData, role: e.target.value })}
+                  placeholder="e.g., UI Dev, Backend Dev, QA"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowNewTaskForm(false)}
+                  style={{
+                    padding: '10px 20px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    backgroundColor: 'white',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Create Task
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

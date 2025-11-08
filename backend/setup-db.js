@@ -46,10 +46,18 @@ async function setupDatabase() {
         last_name VARCHAR(100) NOT NULL,
         role VARCHAR(50) DEFAULT 'team_member',
         is_verified BOOLEAN DEFAULT FALSE,
+        status VARCHAR(20) DEFAULT 'active',
+        profile_picture VARCHAR(255),
         otp VARCHAR(6),
         otp_expires TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Add profile_picture column if it doesn't exist
+    await appPool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS profile_picture VARCHAR(255)
     `);
 
     console.log('Tables created successfully');
