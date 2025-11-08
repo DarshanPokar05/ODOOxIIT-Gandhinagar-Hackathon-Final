@@ -10,6 +10,12 @@ import UserManagementPage from './UserManagementPage';
 import TaskView from './TaskView/TaskView';
 import EditProjectModal from '../components/EditProjectModal/EditProjectModal';
 import AnalyticsPage from './AnalyticsPage';
+import ProductsPage from './ProductsPage';
+import SalesOrdersPage from './SalesOrders/SalesOrdersPage';
+import PurchaseOrdersPage from './PurchaseOrders/PurchaseOrdersPage';
+import InvoicesPage from './Invoices/InvoicesPage';
+import VendorBillsPage from './VendorBills/VendorBillsPage';
+import ExpensesPage from './Expenses/ExpensesPage';
 
 interface Project {
   id: number;
@@ -107,35 +113,45 @@ const AdminDashboard: React.FC = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div style={{ display: 'flex', backgroundColor: '#f1f5f9', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
       
-      <div style={{ marginLeft: '250px', flex: 1 }}>
+      <div style={{ marginLeft: '256px', flex: 1 }}>
         {/* Top Header */}
         <div style={{
           backgroundColor: 'white',
-          padding: '16px 30px',
+          padding: '20px 32px',
           borderBottom: '1px solid #e2e8f0',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '600', color: '#1f2937' }}>Dashboard</h1>
-            <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '14px' }}>Welcome back, Admin</p>
+            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: '#1e293b' }}>Dashboard</h1>
+            <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '14px' }}>Manage all your projects in one place</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button 
               onClick={() => setShowNewProjectForm(true)}
               style={{
-                padding: '8px 16px',
-                backgroundColor: '#3b82f6',
+                padding: '12px 20px',
+                background: 'linear-gradient(135deg, rgb(160, 80, 140) 0%, rgb(140, 60, 120) 100%)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 cursor: 'pointer',
                 fontSize: '14px',
-                fontWeight: '500'
+                fontWeight: '500',
+                boxShadow: '0 2px 4px rgba(160, 80, 140, 0.2)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(160, 80, 140, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(160, 80, 140, 0.2)';
               }}
             >
               + New Project
@@ -144,11 +160,11 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
         
-        <div style={{ padding: '30px' }}>
+        <div style={{ padding: '32px' }}>
         {activeSection === 'dashboard' && (
           <>
             {/* KPI Widgets */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
               <KPIWidget 
                 title="Total Projects" 
                 value={dashboardData?.kpis?.totalProjects || 0} 
@@ -181,34 +197,52 @@ const AdminDashboard: React.FC = () => {
               />
             </div>
 
-            {/* Filters */}
-            <div style={{ marginBottom: '25px' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {['all', 'planned', 'in_progress', 'completed', 'on_hold'].map(status => (
+            {/* Project Tabs */}
+            <div style={{ marginBottom: '32px' }}>
+              <div style={{ display: 'flex', gap: '4px', backgroundColor: 'white', padding: '4px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                {[
+                  { key: 'all', label: 'All Projects', count: dashboardData?.projects?.length || 0 },
+                  { key: 'planned', label: 'Planned', count: dashboardData?.projects?.filter((p: any) => p.status === 'planned').length || 0 },
+                  { key: 'in_progress', label: 'In Progress', count: dashboardData?.projects?.filter((p: any) => p.status === 'in_progress').length || 0 },
+                  { key: 'completed', label: 'Completed', count: dashboardData?.projects?.filter((p: any) => p.status === 'completed').length || 0 },
+                  { key: 'on_hold', label: 'On Hold', count: dashboardData?.projects?.filter((p: any) => p.status === 'on_hold').length || 0 }
+                ].map(tab => (
                   <button
-                    key={status}
-                    onClick={() => setStatusFilter(status)}
+                    key={tab.key}
+                    onClick={() => setStatusFilter(tab.key)}
                     style={{
-                      padding: '8px 16px',
-                      border: '1px solid #e2e8f0',
+                      padding: '12px 16px',
+                      border: 'none',
                       borderRadius: '6px',
-                      backgroundColor: statusFilter === status ? '#3b82f6' : 'white',
-                      color: statusFilter === status ? 'white' : '#6b7280',
+                      backgroundColor: statusFilter === tab.key ? 'rgb(160, 80, 140)' : 'transparent',
+                      color: statusFilter === tab.key ? 'white' : '#64748b',
                       cursor: 'pointer',
                       fontSize: '14px',
-                      fontWeight: statusFilter === status ? '500' : '400',
-                      textTransform: 'capitalize',
-                      transition: 'all 0.2s'
+                      fontWeight: statusFilter === tab.key ? '500' : '400',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
                     }}
                   >
-                    {status === 'all' ? 'All Projects' : status.replace('_', ' ')}
+                    <span>{tab.label}</span>
+                    <span style={{
+                      backgroundColor: statusFilter === tab.key ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
+                      color: statusFilter === tab.key ? 'white' : '#64748b',
+                      padding: '2px 6px',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: '500'
+                    }}>
+                      {tab.count}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Projects Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
               {filteredProjects.map((project: Project) => (
                 <ProjectCard
                   key={project.id}
@@ -226,8 +260,8 @@ const AdminDashboard: React.FC = () => {
 
         {activeSection === 'tasks' && (
           <div>
-            <h1>Task Management</h1>
-            <p>Assign and track task execution across all projects.</p>
+            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1e293b', margin: '0 0 8px 0' }}>Task Management</h1>
+            <p style={{ color: '#64748b', fontSize: '16px', margin: '0 0 24px 0' }}>Assign and track task execution across all projects.</p>
             <div style={{ marginTop: '20px' }}>
               <h3>Select a project to view tasks:</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px', marginTop: '16px' }}>
@@ -266,6 +300,30 @@ const AdminDashboard: React.FC = () => {
 
         {activeSection === 'users' && (
           <UserManagementPage />
+        )}
+
+        {activeSection === 'products' && (
+          <ProductsPage />
+        )}
+
+        {activeSection === 'sales-orders' && (
+          <SalesOrdersPage />
+        )}
+
+        {activeSection === 'purchase-orders' && (
+          <PurchaseOrdersPage />
+        )}
+
+        {activeSection === 'invoices' && (
+          <InvoicesPage />
+        )}
+
+        {activeSection === 'vendor-bills' && (
+          <VendorBillsPage />
+        )}
+
+        {activeSection === 'expenses' && (
+          <ExpensesPage />
         )}
         </div>
       </div>

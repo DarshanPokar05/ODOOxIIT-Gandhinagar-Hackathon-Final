@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Test</h1>
+    <button onclick="testVendors()">Test Vendors</button>
+    <button onclick="testProjects()">Test Projects</button>
+    <button onclick="testProducts()">Test Products</button>
+    <div id="result"></div>
+
+    <script>
+        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTczNzU0NzI2M30.test'; // Replace with actual token
+
+        async function testVendors() {
+            try {
+                const response = await fetch('http://localhost:5000/api/purchase-orders/vendors/list', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<h3>Vendors:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<h3>Vendors Error:</h3>' + error.message;
+            }
+        }
+
+        async function testProjects() {
+            try {
+                const response = await fetch('http://localhost:5000/api/projects', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<h3>Projects:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<h3>Projects Error:</h3>' + error.message;
+            }
+        }
+
+        async function testProducts() {
+            try {
+                const response = await fetch('http://localhost:5000/api/products', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<h3>Products:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<h3>Products Error:</h3>' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

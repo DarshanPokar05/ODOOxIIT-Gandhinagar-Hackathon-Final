@@ -1,72 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-interface NewProjectFormProps {
+interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProjectCreated: () => void;
+  onTaskCreated: () => void;
+  projectId?: number;
 }
 
-interface Manager {
+interface User {
   id: number;
   first_name: string;
   last_name: string;
   email: string;
 }
 
-const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProjectCreated }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    budget: '',
-    deadline: '',
-    manager_id: '',
-    status: 'planned',
-    priority: 'medium',
-    tags: [] as string[]
-  });
-  const [managers, setManagers] = useState<Manager[]>([]);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
+interface Project {
+  id: number;
+  name: string;
+}
 
-  const availableTags = ['Development', 'Design', 'Marketing', 'Research', 'Testing', 'Analytics', 'Mobile', 'Web', 'API', 'Database'];
+const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose, onTaskCreated, projectId }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    project_id: projectId || '',
+    assigned_to: '',
+    deadline: '',
+    priority: 'Medium'
+  });
+  const [users, setUsers] = useState<User[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      fetchManagers();
+      fetchUsers();
+      if (!projectId) {
+        fetchProjects();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, projectId]);
 
-  const fetchManagers = async () => {
+  const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get('http://localhost:5000/api/users/managers', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setManagers(response.data);
+      setUsers(response.data);
     } catch (error) {
-      console.error('Error fetching managers:', error);
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/dashboard/admin', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProjects(response.data.projects || []);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleTagSelect = (tag: string) => {
-    if (!formData.tags.includes(tag)) {
-      setFormData({ ...formData, tags: [...formData.tags, tag] });
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setFormData({ ...formData, tags: formData.tags.filter(tag => tag !== tagToRemove) });
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,43 +76,26 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
 
     try {
       const token = localStorage.getItem('token');
-      
-      const projectFormData = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === 'tags') {
-          projectFormData.append(key, JSON.stringify(value));
-        } else {
-          projectFormData.append(key, value as string);
-        }
-      });
-      
-      if (imageFile) {
-        projectFormData.append('image', imageFile);
-      }
-
-      await axios.post('http://localhost:5000/api/projects', projectFormData, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
+      await axios.post('http://localhost:5000/api/tasks', {
+        ...formData,
+        project_id: projectId || formData.project_id,
+        status: 'pending'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
-      onProjectCreated();
+      onTaskCreated();
       onClose();
-      
       setFormData({
-        name: '',
+        title: '',
         description: '',
-        budget: '',
+        project_id: projectId || '',
+        assigned_to: '',
         deadline: '',
-        manager_id: '',
-        status: 'planned',
-        priority: 'medium',
-        tags: []
+        priority: 'Medium'
       });
-      setImageFile(null);
     } catch (error) {
-      console.error('Error creating project:', error);
+      console.error('Error creating task:', error);
     } finally {
       setLoading(false);
     }
@@ -138,7 +122,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
         borderRadius: '16px',
         padding: '0',
         width: '100%',
-        maxWidth: '600px',
+        maxWidth: '500px',
         maxHeight: '90vh',
         overflowY: 'auto',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
@@ -150,7 +134,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
           marginBottom: '24px'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>Create New Project</h2>
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>Create New Task</h2>
             <button 
               onClick={onClose} 
               style={{ 
@@ -169,7 +153,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
         </div>
 
         <form onSubmit={handleSubmit} style={{ padding: '0 24px 24px 24px' }}>
-          {/* Project Name */}
+          {/* Task Title */}
           <div style={{ marginBottom: '24px' }}>
             <label style={{ 
               display: 'block', 
@@ -178,15 +162,15 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
               color: '#374151',
               fontSize: '14px'
             }}>
-              Project Name *
+              Task Title *
             </label>
             <input
               type="text"
-              name="name"
-              value={formData.name}
+              name="title"
+              value={formData.title}
               onChange={handleInputChange}
               required
-              placeholder="Enter project name"
+              placeholder="Enter task title"
               style={{
                 width: '100%',
                 padding: '12px 16px',
@@ -216,7 +200,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Enter project description..."
+              placeholder="Enter task description..."
               rows={4}
               style={{
                 width: '100%',
@@ -233,7 +217,47 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
             />
           </div>
 
-          {/* Budget and Deadline */}
+          {/* Project Selection (only if projectId not provided) */}
+          {!projectId && (
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '8px', 
+                fontWeight: '500', 
+                color: '#374151',
+                fontSize: '14px'
+              }}>
+                Project *
+              </label>
+              <select
+                name="project_id"
+                value={formData.project_id}
+                onChange={handleInputChange}
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: '2px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  transition: 'border-color 0.2s ease',
+                  outline: 'none',
+                  backgroundColor: 'white'
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+              >
+                <option value="">Select project</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Assignee and Due Date */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
             <div>
               <label style={{ 
@@ -243,16 +267,13 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
                 color: '#374151',
                 fontSize: '14px'
               }}>
-                Budget ($) *
+                Assignee *
               </label>
-              <input
-                type="number"
-                name="budget"
-                value={formData.budget}
+              <select
+                name="assigned_to"
+                value={formData.assigned_to}
                 onChange={handleInputChange}
                 required
-                placeholder="0.00"
-                step="0.01"
                 style={{
                   width: '100%',
                   padding: '12px 16px',
@@ -260,12 +281,21 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
                   borderRadius: '8px',
                   fontSize: '14px',
                   transition: 'border-color 0.2s ease',
-                  outline: 'none'
+                  outline: 'none',
+                  backgroundColor: 'white'
                 }}
                 onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
                 onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-              />
+              >
+                <option value="">Select assignee</option>
+                {users.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.first_name} {user.last_name}
+                  </option>
+                ))}
+              </select>
             </div>
+            
             <div>
               <label style={{ 
                 display: 'block', 
@@ -274,7 +304,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
                 color: '#374151',
                 fontSize: '14px'
               }}>
-                Deadline *
+                Due Date *
               </label>
               <input
                 type="date"
@@ -298,7 +328,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
             </div>
           </div>
 
-          {/* Project Manager */}
+          {/* Priority */}
           <div style={{ marginBottom: '24px' }}>
             <label style={{ 
               display: 'block', 
@@ -307,49 +337,11 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
               color: '#374151',
               fontSize: '14px'
             }}>
-              Project Manager *
+              Priority
             </label>
             <select
-              name="manager_id"
-              value={formData.manager_id}
-              onChange={handleInputChange}
-              required
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                transition: 'border-color 0.2s ease',
-                outline: 'none',
-                backgroundColor: 'white'
-              }}
-              onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
-              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-            >
-              <option value="">Select project manager</option>
-              {managers.map(manager => (
-                <option key={manager.id} value={manager.id}>
-                  {manager.first_name} {manager.last_name} ({manager.email})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status */}
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontWeight: '500', 
-              color: '#374151',
-              fontSize: '14px'
-            }}>
-              Status
-            </label>
-            <select
-              name="status"
-              value={formData.status}
+              name="priority"
+              value={formData.priority}
               onChange={handleInputChange}
               style={{
                 width: '100%',
@@ -364,10 +356,9 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
               onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
               onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
             >
-              <option value="planned">Planned</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="on_hold">On Hold</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
             </select>
           </div>
 
@@ -406,7 +397,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
                 transition: 'all 0.2s ease'
               }}
             >
-              {loading ? 'Creating...' : 'Create Project'}
+              {loading ? 'Creating...' : 'Create Task'}
             </button>
           </div>
         </form>
@@ -415,4 +406,4 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ isOpen, onClose, onProj
   );
 };
 
-export default NewProjectForm;
+export default CreateTaskModal;

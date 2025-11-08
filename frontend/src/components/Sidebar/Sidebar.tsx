@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
   activeSection: string;
@@ -6,64 +7,78 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => {
+  const { user } = useAuth();
+  const [showProductsDropdown, setShowProductsDropdown] = useState(false);
+  
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'projects', label: 'Projects', icon: '📁' },
     { id: 'tasks', label: 'Tasks', icon: '✓' },
-    { id: 'users', label: 'Manage Users', icon: '👥' },
     { id: 'analytics', label: 'Analytics', icon: '📈' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
+  ];
+
+  const settingsItems = [
+    ...(user && ['admin', 'finance_manager'].includes(user.role) ? [{ id: 'sales-orders', label: 'Sales Orders', icon: '📋' }] : []),
+    ...(user && ['admin', 'project_manager'].includes(user.role) ? [{ id: 'purchase-orders', label: 'Purchase Orders', icon: '🛒' }] : []),
+    ...(user && ['admin', 'finance_manager'].includes(user.role) ? [{ id: 'invoices', label: 'Customer Invoices', icon: '📄' }] : []),
+    ...(user && ['admin', 'project_manager'].includes(user.role) ? [{ id: 'vendor-bills', label: 'Vendor Bills', icon: '📜' }] : []),
+    { id: 'expenses', label: 'Expenses', icon: '💰' },
+    { id: 'users', label: 'Manage Users', icon: '👥' },
+    { id: 'products', label: 'Products', icon: '📦' },
   ];
 
   return (
     <div style={{ 
-      width: '250px', 
+      width: '256px', 
       height: '100vh', 
-      backgroundColor: '#1e293b', 
-      color: 'white', 
+      backgroundColor: '#f8fafc', 
+      color: '#1e293b', 
       padding: '0',
       position: 'fixed',
       left: 0,
-      top: 0
+      top: 0,
+      borderRight: '1px solid #e2e8f0'
     }}>
       {/* Logo Section */}
       <div style={{ 
-        padding: '20px', 
-        borderBottom: '1px solid #334155',
+        padding: '24px 20px', 
+        borderBottom: '1px solid #e2e8f0',
         display: 'flex',
         alignItems: 'center',
-        gap: '10px'
+        gap: '12px'
       }}>
         <div style={{
           width: '32px',
           height: '32px',
-          backgroundColor: '#3b82f6',
-          borderRadius: '6px',
+          background: 'linear-gradient(135deg, rgb(160, 80, 140) 0%, rgb(140, 60, 120) 100%)',
+          borderRadius: '8px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: '16px',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          color: 'white'
         }}>
-          PM
+          ⚡
         </div>
         <div>
-          <div style={{ fontSize: '16px', fontWeight: '600' }}>ProjectManager</div>
-          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Project Management</div>
+          <div style={{ fontSize: '18px', fontWeight: '700', color: 'rgb(160, 80, 140)' }}>OneFlow</div>
+          <div style={{ fontSize: '12px', color: '#64748b' }}>Project Management</div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <div style={{ padding: '20px 0' }}>
+      {/* Main Menu */}
+      <div style={{ padding: '24px 0 16px 0' }}>
         <div style={{ 
-          fontSize: '12px', 
-          color: '#94a3b8', 
+          fontSize: '11px', 
+          color: '#64748b', 
           fontWeight: '600', 
           padding: '0 20px', 
-          marginBottom: '15px',
+          marginBottom: '12px',
           textTransform: 'uppercase',
           letterSpacing: '0.5px'
         }}>
-          NAVIGATION
+          Main Menu
         </div>
         
         {menuItems.map(item => (
@@ -71,16 +86,28 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
             key={item.id}
             onClick={() => onSectionChange(item.id)}
             style={{
-              padding: '12px 20px',
+              margin: '0 12px 4px 12px',
+              padding: '12px 16px',
               cursor: 'pointer',
-              backgroundColor: activeSection === item.id ? '#3b82f6' : 'transparent',
+              backgroundColor: activeSection === item.id ? 'rgb(160, 80, 140)' : 'transparent',
+              borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              color: activeSection === item.id ? 'white' : '#cbd5e1',
+              color: activeSection === item.id ? 'white' : '#64748b',
               fontSize: '14px',
               fontWeight: activeSection === item.id ? '500' : '400',
-              borderRight: activeSection === item.id ? '3px solid #60a5fa' : 'none'
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              if (activeSection !== item.id) {
+                e.currentTarget.style.backgroundColor = '#f1f5f9';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeSection !== item.id) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
             }}
           >
             <span style={{ fontSize: '16px' }}>{item.icon}</span>
@@ -88,6 +115,57 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
           </div>
         ))}
       </div>
+
+      {/* Settings Section */}
+      <div style={{ padding: '16px 0' }}>
+        <div style={{ 
+          fontSize: '11px', 
+          color: '#64748b', 
+          fontWeight: '600', 
+          padding: '0 20px', 
+          marginBottom: '12px',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px'
+        }}>
+          Settings
+        </div>
+        
+        {settingsItems.map(item => (
+          <div
+            key={item.id}
+            onClick={() => onSectionChange(item.id)}
+            style={{
+              margin: '0 12px 4px 12px',
+              padding: '12px 16px',
+              cursor: 'pointer',
+              backgroundColor: activeSection === item.id ? 'rgb(160, 80, 140)' : 'transparent',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              color: activeSection === item.id ? 'white' : '#64748b',
+              fontSize: '14px',
+              fontWeight: activeSection === item.id ? '500' : '400',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              if (activeSection !== item.id) {
+                e.currentTarget.style.backgroundColor = '#f1f5f9';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeSection !== item.id) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>{item.icon}</span>
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </div>
+
+
     </div>
   );
 };

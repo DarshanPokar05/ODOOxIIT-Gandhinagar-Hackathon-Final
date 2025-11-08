@@ -13,6 +13,12 @@ const userRoutes = require('./routes/users');
 const taskRoutes = require('./routes/tasks');
 const profileRoutes = require('./routes/profile');
 const analyticsRoutes = require('./routes/analytics');
+const productsRoutes = require('./routes/products');
+const salesOrdersRoutes = require('./routes/sales-orders');
+const purchaseOrdersRoutes = require('./routes/purchase-orders');
+const invoicesRoutes = require('./routes/invoices');
+const vendorBillsRoutes = require('./routes/vendor-bills');
+const expensesRoutes = require('./routes/expenses-complete');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,6 +36,12 @@ app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/products', productsRoutes);
+app.use('/api/sales-orders', salesOrdersRoutes);
+app.use('/api/purchase-orders', purchaseOrdersRoutes);
+app.use('/api/invoices', invoicesRoutes);
+app.use('/api/vendor-bills', vendorBillsRoutes);
+app.use('/api/expenses', expensesRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

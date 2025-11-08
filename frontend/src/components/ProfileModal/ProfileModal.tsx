@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import './ProfileModal.css';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -197,28 +196,111 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>My Profile</h2>
-          <button className="close-btn" onClick={onClose}>&times;</button>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '20px'
+    }} onClick={onClose}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        padding: '0',
+        width: '100%',
+        maxWidth: '500px',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+      }} onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{ 
+          padding: '24px 24px 0 24px', 
+          borderBottom: '1px solid #f1f5f9',
+          marginBottom: '24px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>My Profile</h2>
+            <button 
+              onClick={onClose} 
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                fontSize: '24px', 
+                cursor: 'pointer',
+                color: '#64748b',
+                padding: '4px',
+                borderRadius: '4px'
+              }}
+            >
+              ×
+            </button>
+          </div>
         </div>
 
-        <div className="modal-content">
-          {message && <div className="success-message">{message}</div>}
-          {error && <div className="error-message">{error}</div>}
+        <div style={{ padding: '0 24px 24px 24px' }}>
+          {message && (
+            <div style={{ 
+              padding: '12px 16px',
+              backgroundColor: '#d1fae5',
+              color: '#065f46',
+              borderRadius: '8px',
+              fontSize: '14px',
+              marginBottom: '24px'
+            }}>
+              {message}
+            </div>
+          )}
+          
+          {error && (
+            <div style={{ 
+              padding: '12px 16px',
+              backgroundColor: '#fee2e2',
+              color: '#991b1b',
+              borderRadius: '8px',
+              fontSize: '14px',
+              marginBottom: '24px'
+            }}>
+              {error}
+            </div>
+          )}
 
           {!isChangingPassword ? (
-            <div className="profile-section">
-              <div className="profile-picture-section">
-                <div className="profile-picture">
+            <div>
+              {/* Profile Picture Section */}
+              <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  margin: '0 auto 16px',
+                  overflow: 'hidden',
+                  border: '3px solid #e2e8f0'
+                }}>
                   {profile?.profile_picture ? (
                     <img 
                       src={`http://localhost:5000/${profile.profile_picture}`} 
-                      alt="Profile" 
+                      alt="Profile"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
-                    <div className="default-avatar">
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      background: 'linear-gradient(135deg, rgb(160, 80, 140) 0%, rgb(140, 60, 120) 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '24px',
+                      fontWeight: '600'
+                    }}>
                       {profile?.first_name?.[0] || 'U'}{profile?.last_name?.[0] || 'N'}
                     </div>
                   )}
@@ -228,67 +310,184 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
-                    className="file-input"
+                    style={{
+                      padding: '8px 12px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
                   />
                 )}
               </div>
 
               {isEditing ? (
-                <form onSubmit={handleUpdateProfile} className="edit-form">
-                  <div className="form-group">
-                    <label>First Name</label>
+                <form onSubmit={handleUpdateProfile}>
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: '8px', 
+                      fontWeight: '500', 
+                      color: '#374151',
+                      fontSize: '14px'
+                    }}>
+                      First Name
+                    </label>
                     <input
                       type="text"
                       value={formData.first_name}
                       onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                       required
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        transition: 'border-color 0.2s ease',
+                        outline: 'none'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
                   </div>
-                  <div className="form-group">
-                    <label>Last Name</label>
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: '8px', 
+                      fontWeight: '500', 
+                      color: '#374151',
+                      fontSize: '14px'
+                    }}>
+                      Last Name
+                    </label>
                     <input
                       type="text"
                       value={formData.last_name}
                       onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
                       required
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        transition: 'border-color 0.2s ease',
+                        outline: 'none'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
                   </div>
-                  <div className="form-actions">
-                    <button type="submit" disabled={loading} className="save-btn">
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        background: 'linear-gradient(135deg, rgb(160, 80, 140) 0%, rgb(140, 60, 120) 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.7 : 1
+                      }}
+                    >
                       {loading ? 'Saving...' : 'Save Changes'}
                     </button>
-                    <button type="button" onClick={() => setIsEditing(false)} className="cancel-btn">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        backgroundColor: 'white',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#64748b'
+                      }}
+                    >
                       Cancel
                     </button>
                   </div>
                 </form>
               ) : (
-                <div className="profile-info">
-                  <div className="info-item">
-                    <label>Full Name</label>
-                    <span>{profile?.first_name || 'Not set'} {profile?.last_name || ''}</span>
+                <div>
+                  <div style={{ marginBottom: '24px' }}>
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Full Name</label>
+                      <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                        {profile?.first_name || 'Not set'} {profile?.last_name || ''}
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Email Address</label>
+                      <div style={{ fontSize: '16px', color: '#1e293b' }}>
+                        {profile?.email || 'Not available'}
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Role</label>
+                      <div style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        backgroundColor: '#f3f4f6',
+                        color: '#374151',
+                        borderRadius: '16px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        textTransform: 'capitalize'
+                      }}>
+                        {profile?.role?.replace('_', ' ') || 'Not assigned'}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Member Since</label>
+                      <div style={{ fontSize: '16px', color: '#1e293b' }}>
+                        {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        }) : 'Not available'}
+                      </div>
+                    </div>
                   </div>
-                  <div className="info-item">
-                    <label>Email Address</label>
-                    <span>{profile?.email || 'Not available'}</span>
-                  </div>
-                  <div className="info-item">
-                    <label>Role</label>
-                    <span className="role-badge">{profile?.role?.replace('_', ' ') || 'Not assigned'}</span>
-                  </div>
-                  <div className="info-item">
-                    <label>Member Since</label>
-                    <span>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    }) : 'Not available'}</span>
-                  </div>
-                  <div className="profile-actions">
-                    <button onClick={() => setIsEditing(true)} className="edit-btn">
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        background: 'linear-gradient(135deg, rgb(160, 80, 140) 0%, rgb(140, 60, 120) 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: 'pointer'
+                      }}
+                    >
                       Edit Profile
                     </button>
-                    <button onClick={() => setIsChangingPassword(true)} className="change-password-btn">
+                    <button
+                      onClick={() => setIsChangingPassword(true)}
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        backgroundColor: 'white',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#64748b'
+                      }}
+                    >
                       Change Password
                     </button>
                   </div>
@@ -296,30 +495,65 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
               )}
             </div>
           ) : (
-            <div className="password-change-section">
-              <h3>Change Password</h3>
+            <div>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1e293b', marginBottom: '24px' }}>
+                Change Password
+              </h3>
               
               {!otpSent ? (
-                <div className="otp-request">
-                  <p>To change your password, we'll send an OTP to your registered email address.</p>
-                  <button 
-                    onClick={handleRequestPasswordChange} 
-                    disabled={loading}
-                    className="request-otp-btn"
-                  >
-                    {loading ? 'Sending...' : 'Send OTP'}
-                  </button>
-                  <button 
-                    onClick={() => setIsChangingPassword(false)} 
-                    className="cancel-btn"
-                  >
-                    Cancel
-                  </button>
+                <div>
+                  <p style={{ color: '#64748b', marginBottom: '24px' }}>
+                    To change your password, we'll send an OTP to your registered email address.
+                  </p>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button 
+                      onClick={handleRequestPasswordChange} 
+                      disabled={loading}
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        background: 'linear-gradient(135deg, rgb(160, 80, 140) 0%, rgb(140, 60, 120) 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.7 : 1
+                      }}
+                    >
+                      {loading ? 'Sending...' : 'Send OTP'}
+                    </button>
+                    <button 
+                      onClick={() => setIsChangingPassword(false)} 
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        backgroundColor: 'white',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#64748b'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <form onSubmit={handleChangePassword} className="password-form">
-                  <div className="form-group">
-                    <label>Enter OTP</label>
+                <form onSubmit={handleChangePassword}>
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: '8px', 
+                      fontWeight: '500', 
+                      color: '#374151',
+                      fontSize: '14px'
+                    }}>
+                      Enter OTP
+                    </label>
                     <input
                       type="text"
                       value={passwordData.otp}
@@ -327,10 +561,29 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                       placeholder="6-digit OTP"
                       maxLength={6}
                       required
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        transition: 'border-color 0.2s ease',
+                        outline: 'none'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
                   </div>
-                  <div className="form-group">
-                    <label>New Password</label>
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: '8px', 
+                      fontWeight: '500', 
+                      color: '#374151',
+                      fontSize: '14px'
+                    }}>
+                      New Password
+                    </label>
                     <input
                       type="password"
                       value={passwordData.newPassword}
@@ -338,10 +591,29 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                       placeholder="Enter new password"
                       minLength={6}
                       required
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        transition: 'border-color 0.2s ease',
+                        outline: 'none'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
                   </div>
-                  <div className="form-group">
-                    <label>Confirm Password</label>
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: '8px', 
+                      fontWeight: '500', 
+                      color: '#374151',
+                      fontSize: '14px'
+                    }}>
+                      Confirm Password
+                    </label>
                     <input
                       type="password"
                       value={passwordData.confirmPassword}
@@ -349,10 +621,36 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                       placeholder="Confirm new password"
                       minLength={6}
                       required
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        transition: 'border-color 0.2s ease',
+                        outline: 'none'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
                   </div>
-                  <div className="form-actions">
-                    <button type="submit" disabled={loading} className="save-btn">
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        background: 'linear-gradient(135deg, rgb(160, 80, 140) 0%, rgb(140, 60, 120) 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.7 : 1
+                      }}
+                    >
                       {loading ? 'Changing...' : 'Change Password'}
                     </button>
                     <button 
@@ -362,7 +660,17 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                         setOtpSent(false);
                         setPasswordData({ otp: '', newPassword: '', confirmPassword: '' });
                       }} 
-                      className="cancel-btn"
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        backgroundColor: 'white',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#64748b'
+                      }}
                     >
                       Cancel
                     </button>

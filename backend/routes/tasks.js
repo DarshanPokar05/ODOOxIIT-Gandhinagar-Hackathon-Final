@@ -86,6 +86,24 @@ router.patch('/:id/status', authenticateToken, async (req, res) => {
 });
 
 // Get task details with all related data
+// Get tasks for invoicing
+router.get('/for-invoice', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT t.*, p.name as project_name
+      FROM tasks t
+      JOIN projects p ON t.project_id = p.id
+      WHERE t.status = 'completed'
+      ORDER BY t.title
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching tasks for invoice:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get task details with all related data
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -331,6 +349,23 @@ router.put('/:id', [
     res.json({ message: 'Task updated successfully', task: result.rows[0] });
   } catch (error) {
     console.error('Error updating task:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get tasks for invoicing
+router.get('/for-invoice', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT t.*, p.name as project_name
+      FROM tasks t
+      JOIN projects p ON t.project_id = p.id
+      WHERE t.status = 'completed'
+      ORDER BY t.title
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching tasks for invoice:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
