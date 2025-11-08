@@ -1,11 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+import Sidebar from '../components/Sidebar/Sidebar';
+import KPIWidget from '../components/KPIWidget/KPIWidget';
+import ProjectCard from '../components/ProjectCard/ProjectCard';
+import ProfileDropdown from '../components/ProfileDropdown/ProfileDropdown';
+import NewProjectForm from '../components/NewProjectForm/NewProjectForm';
+import ProjectDetail from '../components/ProjectDetail/ProjectDetail';
+
+interface Project {
+  id: number;
+  name: string;
+  description: string;
+  status: string;
+  deadline: string;
+  manager_name: string;
+  tags: string[];
+  image_url: string;
+  task_count: number;
+}
 
 const AdminDashboard: React.FC = () => {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { user, logout } = useAuth();
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showNewProjectForm, setShowNewProjectForm] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -25,45 +45,198 @@ const AdminDashboard: React.FC = () => {
     fetchDashboardData();
   }, []);
 
+  const filteredProjects = dashboardData?.projects?.filter((project: Project) => 
+    statusFilter === 'all' || project.status === statusFilter
+  ) || [];
+
+  const handleEditProject = (project: Project) => {
+    console.log('Edit project:', project);
+  };
+
+  const handleDeleteProject = (projectId: number) => {
+    console.log('Delete project:', projectId);
+  };
+
+  const handleProjectClick = (projectId: number) => {
+    setSelectedProjectId(projectId);
+  };
+
+  const handleProjectCreated = () => {
+    fetchDashboardData();
+  };
+
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/dashboard/admin', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDashboardData(response.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1>Admin Dashboard</h1>
-        <div>
-          <span style={{ marginRight: '15px' }}>Welcome, {user?.firstName} {user?.lastName}</span>
-          <button onClick={logout} style={{ padding: '8px 16px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            Logout
-          </button>
+    <div style={{ display: 'flex', backgroundColor: '#f1f5f9', minHeight: '100vh' }}>
+      <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      
+      <div style={{ marginLeft: '250px', flex: 1 }}>
+        {/* Top Header */}
+        <div style={{
+          backgroundColor: 'white',
+          padding: '16px 30px',
+          borderBottom: '1px solid #e2e8f0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '600', color: '#1f2937' }}>Dashboard</h1>
+            <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '14px' }}>Welcome back, Admin</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button 
+              onClick={() => setShowNewProjectForm(true)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              + New Project
+            </button>
+            <ProfileDropdown />
+          </div>
         </div>
-      </div>
+        
+        <div style={{ padding: '30px' }}>
+        {activeSection === 'dashboard' && (
+          <>
+            {/* KPI Widgets */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+              <KPIWidget 
+                title="Total Projects" 
+                value={dashboardData?.kpis?.totalProjects || 0} 
+                icon="📊" 
+                color="#dbeafe" 
+              />
+              <KPIWidget 
+                title="Active Projects" 
+                value={dashboardData?.kpis?.activeProjects || 0} 
+                icon="🚀" 
+                color="#dcfce7" 
+              />
+              <KPIWidget 
+                title="Total Revenue" 
+                value={`$${(dashboardData?.kpis?.totalRevenue || 0).toLocaleString()}`} 
+                icon="💰" 
+                color="#fef3c7" 
+              />
+              <KPIWidget 
+                title="Total Cost" 
+                value={`$${(dashboardData?.kpis?.totalCost || 0).toLocaleString()}`} 
+                icon="💸" 
+                color="#fecaca" 
+              />
+              <KPIWidget 
+                title="Total Profit" 
+                value={`$${(dashboardData?.kpis?.totalProfit || 0).toLocaleString()}`} 
+                icon="📈" 
+                color="#d1fae5" 
+              />
+            </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-        <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-          <h3>Total Users</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#007bff' }}>{dashboardData?.data?.totalUsers}</p>
-        </div>
-        <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-          <h3>Active Projects</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>{dashboardData?.data?.activeProjects}</p>
-        </div>
-        <div style={{ padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-          <h3>System Health</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>{dashboardData?.data?.systemHealth}</p>
-        </div>
-      </div>
+            {/* Filters */}
+            <div style={{ marginBottom: '25px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['all', 'planned', 'in_progress', 'completed', 'on_hold'].map(status => (
+                  <button
+                    key={status}
+                    onClick={() => setStatusFilter(status)}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '6px',
+                      backgroundColor: statusFilter === status ? '#3b82f6' : 'white',
+                      color: statusFilter === status ? 'white' : '#6b7280',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: statusFilter === status ? '500' : '400',
+                      textTransform: 'capitalize',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {status === 'all' ? 'All Projects' : status.replace('_', ' ')}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-      <div style={{ backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-        <h3>Recent Activity</h3>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {dashboardData?.data?.recentActivity?.map((activity: string, index: number) => (
-            <li key={index} style={{ padding: '8px 0', borderBottom: '1px solid #dee2e6' }}>
-              {activity}
-            </li>
-          ))}
-        </ul>
+            {/* Projects Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+              {filteredProjects.map((project: Project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onEdit={handleEditProject}
+                  onDelete={handleDeleteProject}
+                  onClick={handleProjectClick}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {activeSection === 'projects' && (
+          <div>
+            <h1>Projects Management</h1>
+            <p>Create and manage projects here.</p>
+          </div>
+        )}
+
+        {activeSection === 'tasks' && (
+          <div>
+            <h1>Task Management</h1>
+            <p>Assign and track task execution.</p>
+          </div>
+        )}
+
+        {activeSection === 'analytics' && (
+          <div>
+            <h1>Analytics</h1>
+            <p>Progress, utilization, and profitability analytics.</p>
+          </div>
+        )}
+
+        {activeSection === 'managers' && (
+          <div>
+            <h1>Managers</h1>
+            <p>Manage project managers and team leads.</p>
+          </div>
+        )}
+        </div>
       </div>
+      
+      <NewProjectForm 
+        isOpen={showNewProjectForm}
+        onClose={() => setShowNewProjectForm(false)}
+        onProjectCreated={handleProjectCreated}
+      />
+      
+      {selectedProjectId && (
+        <ProjectDetail 
+          projectId={selectedProjectId}
+          onClose={() => setSelectedProjectId(null)}
+        />
+      )}
     </div>
   );
 };
