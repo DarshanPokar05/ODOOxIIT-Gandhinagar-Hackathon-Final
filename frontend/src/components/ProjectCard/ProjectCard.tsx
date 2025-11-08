@@ -7,9 +7,12 @@ interface Project {
   status: string;
   deadline: string;
   manager_name: string;
+  manager_id: number;
   tags: string[];
   image_url: string;
   task_count: number;
+  budget: number;
+  priority: string;
 }
 
 interface ProjectCardProps {

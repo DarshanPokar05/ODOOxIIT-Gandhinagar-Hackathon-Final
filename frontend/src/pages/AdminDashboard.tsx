@@ -8,6 +8,8 @@ import NewProjectForm from '../components/NewProjectForm/NewProjectForm';
 import ProjectDetail from '../components/ProjectDetail/ProjectDetail';
 import UserManagementPage from './UserManagementPage';
 import TaskView from './TaskView/TaskView';
+import EditProjectModal from '../components/EditProjectModal/EditProjectModal';
+import AnalyticsPage from './AnalyticsPage';
 
 interface Project {
   id: number;
@@ -16,9 +18,12 @@ interface Project {
   status: string;
   deadline: string;
   manager_name: string;
+  manager_id: number;
   tags: string[];
   image_url: string;
   task_count: number;
+  budget: number;
+  priority: string;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -30,6 +35,8 @@ const AdminDashboard: React.FC = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [showTaskView, setShowTaskView] = useState(false);
   const [taskViewProjectId, setTaskViewProjectId] = useState<number | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -54,11 +61,27 @@ const AdminDashboard: React.FC = () => {
   ) || [];
 
   const handleEditProject = (project: Project) => {
-    console.log('Edit project:', project);
+    setEditingProject(project);
+    setShowEditModal(true);
   };
 
-  const handleDeleteProject = (projectId: number) => {
-    console.log('Delete project:', projectId);
+  const handleDeleteProject = async (projectId: number) => {
+    if (!window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.delete(`http://localhost:5000/api/projects/${projectId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.status === 200) {
+        fetchDashboardData(); // Refresh the data
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to delete project');
+    }
   };
 
   const handleProjectClick = (projectId: number) => {
@@ -238,10 +261,7 @@ const AdminDashboard: React.FC = () => {
         )}
 
         {activeSection === 'analytics' && (
-          <div>
-            <h1>Analytics</h1>
-            <p>Progress, utilization, and profitability analytics.</p>
-          </div>
+          <AnalyticsPage />
         )}
 
         {activeSection === 'users' && (
@@ -272,6 +292,16 @@ const AdminDashboard: React.FC = () => {
           }}
         />
       )}
+      
+      <EditProjectModal 
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingProject(null);
+        }}
+        project={editingProject}
+        onProjectUpdated={fetchDashboardData}
+      />
     </div>
   );
 };

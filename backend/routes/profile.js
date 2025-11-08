@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const { body, validationResult } = require('express-validator');
 const { pool } = require('../config/database');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -43,7 +43,7 @@ const upload = multer({
 });
 
 // Email transporter
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT,
   secure: false,
@@ -54,7 +54,7 @@ const transporter = nodemailer.createTransporter({
 });
 
 // Get user profile
-router.get('/', auth, async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
       'SELECT id, email, first_name, last_name, role, profile_picture, created_at FROM users WHERE id = $1',
@@ -73,7 +73,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Update profile (name and profile picture)
-router.put('/', auth, upload.single('profilePicture'), [
+router.put('/', authenticateToken, upload.single('profilePicture'), [
   body('first_name').trim().isLength({ min: 1 }).withMessage('First name is required'),
   body('last_name').trim().isLength({ min: 1 }).withMessage('Last name is required'),
 ], async (req, res) => {
@@ -118,7 +118,7 @@ router.put('/', auth, upload.single('profilePicture'), [
 });
 
 // Request password change OTP
-router.post('/change-password-request', auth, async (req, res) => {
+router.post('/change-password-request', authenticateToken, async (req, res) => {
   try {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -156,7 +156,7 @@ router.post('/change-password-request', auth, async (req, res) => {
 });
 
 // Change password with OTP verification
-router.post('/change-password', auth, [
+router.post('/change-password', authenticateToken, [
   body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
   body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 ], async (req, res) => {

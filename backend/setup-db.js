@@ -1,5 +1,6 @@
+const path = require('path');
 const { Pool } = require('pg');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Connect to postgres database first to create auth_db
 const adminPool = new Pool({
