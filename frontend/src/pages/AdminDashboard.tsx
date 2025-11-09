@@ -348,6 +348,7 @@ const AdminDashboard: React.FC = () => {
             setShowTaskView(false);
             setTaskViewProjectId(null);
           }}
+          canCreate={true}
         />
       )}
       

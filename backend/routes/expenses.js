@@ -53,12 +53,26 @@ const generateExpenseNumber = async () => {
   return `${prefix}${String(nextNumber).padStart(3, '0')}`;
 };
 
-// Log expense history
-const logExpenseHistory = async (expenseId, action, userId, beforeData, afterData) => {
-  await pool.query(`
-    INSERT INTO expense_history (expense_id, action, user_id, before_data, after_data)
-    VALUES ($1, $2, $3, $4, $5)
-  `, [expenseId, action, userId, beforeData ? JSON.stringify(beforeData) : null, JSON.stringify(afterData)]);
+// Log expense history (safe, non-blocking)
+const logExpenseHistory = async (expenseId, action, userId, beforeSnapshot = null, afterSnapshot = null, oldStatus = null, newStatus = null, changeReason = null) => {
+  try {
+    await pool.query(
+      `INSERT INTO expense_history (expense_id, action, user_id, change_reason, before_snapshot, after_snapshot, old_status, new_status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        expenseId,
+        action,
+        userId,
+        changeReason,
+        beforeSnapshot ? JSON.stringify(beforeSnapshot) : null,
+        afterSnapshot ? JSON.stringify(afterSnapshot) : null,
+        oldStatus,
+        newStatus,
+      ]
+    );
+  } catch (err) {
+    console.error('Error logging expense history:', err);
+  }
 };
 
 // Get all expenses
@@ -148,7 +162,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Create expense
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, upload.single('receipt'), async (req, res) => {
   try {
     const { 
       project_id, task_id, expense_date, category, description, 
@@ -156,33 +170,69 @@ router.post('/', auth, async (req, res) => {
     } = req.body;
     
     // Validation
-    if (!project_id || !category || !amount || amount <= 0) {
-      return res.status(400).json({ message: 'Project, category, and valid amount are required' });
+    console.log('Expense data:', { project_id, category, amount, description: description?.substring(0, 20) });
+    
+    if (!project_id) {
+      console.log('Validation failed: Missing project_id');
+      return res.status(400).json({ message: 'Project is required' });
+    }
+    if (!category) {
+      console.log('Validation failed: Missing category');
+      return res.status(400).json({ message: 'Category is required' });
+    }
+    if (!amount) {
+      console.log('Validation failed: Missing amount');
+      return res.status(400).json({ message: 'Amount is required' });
+    }
+    if (parseFloat(amount) <= 0) {
+      console.log('Validation failed: Invalid amount:', amount, parseFloat(amount));
+      return res.status(400).json({ message: 'Amount must be greater than 0' });
+    }
+    if (!description || !description.trim()) {
+      console.log('Validation failed: Missing or empty description:', description);
+      return res.status(400).json({ message: 'Description is required' });
     }
     
-    if (billable && !billable_to_customer_id) {
+    if (billable === 'true' && !billable_to_customer_id) {
       return res.status(400).json({ message: 'Customer is required for billable expenses' });
     }
     
     const expense_number = await generateExpenseNumber();
-    const amount_company_currency = amount * (exchange_rate || 1.0);
+    const parsedAmount = parseFloat(amount);
+    const parsedExchangeRate = parseFloat(exchange_rate || 1.0);
+    const amount_company_currency = parsedAmount * parsedExchangeRate;
+    const isBillable = billable === 'true';
+    
+    // Handle receipt upload
+    const receipt_url = req.file ? `/uploads/receipts/${req.file.filename}` : null;
     
     const result = await pool.query(`
       INSERT INTO expenses (
         expense_number, project_id, task_id, submitted_by, expense_date, 
         category, description, amount, currency, exchange_rate, 
-        amount_company_currency, billable, billable_to_customer_id
+        amount_company_currency, billable, billable_to_customer_id, receipt_url
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `, [
-      expense_number, project_id, task_id, req.user.id, expense_date || new Date().toISOString().split('T')[0],
-      category, description, amount, currency || 'USD', exchange_rate || 1.0,
-      amount_company_currency, billable || false, billable_to_customer_id
+      expense_number, 
+      parseInt(project_id), 
+      task_id ? parseInt(task_id) : null, 
+      req.user.id, 
+      expense_date || new Date().toISOString().split('T')[0],
+      category, 
+      description, 
+      parsedAmount, 
+      currency || 'USD', 
+      parsedExchangeRate,
+      amount_company_currency, 
+      isBillable, 
+      billable_to_customer_id ? parseInt(billable_to_customer_id) : null, 
+      receipt_url
     ]);
     
-    // Log history
-    await logExpenseHistory(result.rows[0].id, 'CREATED', req.user.id, null, result.rows[0]);
+  // Log history
+  await logExpenseHistory(result.rows[0].id, 'CREATED', req.user.id, null, result.rows[0], null, result.rows[0].status);
     
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -192,7 +242,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Update expense (only draft or submitted)
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, upload.single('receipt'), async (req, res) => {
   try {
     const { id } = req.params;
     const { 
@@ -218,22 +268,25 @@ router.put('/:id', auth, async (req, res) => {
     
     const amount_company_currency = amount * (exchange_rate || 1.0);
     
+    // Handle receipt upload
+    const receipt_url = req.file ? `/uploads/receipts/${req.file.filename}` : expense.receipt_url;
+    
     const result = await pool.query(`
       UPDATE expenses 
       SET project_id = $1, task_id = $2, expense_date = $3, category = $4, 
           description = $5, amount = $6, currency = $7, exchange_rate = $8,
           amount_company_currency = $9, billable = $10, billable_to_customer_id = $11,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = $12
+          receipt_url = $12, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $13
       RETURNING *
     `, [
       project_id, task_id, expense_date, category, description, 
       amount, currency, exchange_rate, amount_company_currency, 
-      billable, billable_to_customer_id, id
+      billable, billable_to_customer_id, receipt_url, id
     ]);
     
-    // Log history
-    await logExpenseHistory(id, 'UPDATED', req.user.id, expense, result.rows[0]);
+  // Log history
+  await logExpenseHistory(id, 'UPDATED', req.user.id, expense, result.rows[0], expense.status, result.rows[0].status);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -270,8 +323,8 @@ router.post('/:id/submit', auth, async (req, res) => {
       RETURNING *
     `, [id]);
     
-    // Log history
-    await logExpenseHistory(id, 'SUBMITTED', req.user.id, expense, result.rows[0]);
+  // Log history
+  await logExpenseHistory(id, 'SUBMITTED', req.user.id, expense, result.rows[0], expense.status, result.rows[0].status);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -315,8 +368,8 @@ router.post('/:id/approve', auth, async (req, res) => {
       WHERE id = $2
     `, [expense.amount_company_currency, expense.project_id]);
     
-    // Log history
-    await logExpenseHistory(id, 'APPROVED', req.user.id, expense, result.rows[0]);
+  // Log history
+  await logExpenseHistory(id, 'APPROVED', req.user.id, expense, result.rows[0], expense.status, result.rows[0].status);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -354,8 +407,8 @@ router.post('/:id/reject', auth, async (req, res) => {
       RETURNING *
     `, [req.user.id, rejection_reason, id]);
     
-    // Log history
-    await logExpenseHistory(id, 'REJECTED', req.user.id, expense, result.rows[0]);
+  // Log history
+  await logExpenseHistory(id, 'REJECTED', req.user.id, expense, result.rows[0], expense.status, result.rows[0].status, rejection_reason);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -392,8 +445,8 @@ router.post('/:id/reimburse', auth, async (req, res) => {
       RETURNING *
     `, [req.user.id, id]);
     
-    // Log history
-    await logExpenseHistory(id, 'REIMBURSED', req.user.id, expense, result.rows[0]);
+  // Log history
+  await logExpenseHistory(id, 'REIMBURSED', req.user.id, expense, result.rows[0], expense.status, result.rows[0].status);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -432,8 +485,8 @@ router.post('/:id/attach', auth, upload.single('receipt'), async (req, res) => {
       RETURNING *
     `, [receipt_url, id]);
     
-    // Log history
-    await logExpenseHistory(id, 'RECEIPT_ATTACHED', req.user.id, expense, result.rows[0]);
+  // Log history
+  await logExpenseHistory(id, 'RECEIPT_ATTACHED', req.user.id, expense, result.rows[0], expense.status, result.rows[0].status);
     
     res.json({ message: 'Receipt uploaded successfully', receipt_url });
   } catch (error) {
@@ -449,6 +502,21 @@ router.get('/categories/list', auth, async (req, res) => {
     res.json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get customers for billable expenses
+router.get('/customers/list', auth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, name, email, company
+      FROM customers
+      ORDER BY name
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching customers:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

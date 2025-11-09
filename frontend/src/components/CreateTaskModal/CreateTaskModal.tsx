@@ -30,6 +30,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose, onTa
     priority: 'Medium'
   });
   const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -44,13 +45,17 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose, onTa
 
   const fetchUsers = async () => {
     try {
+      setUsersLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/users/managers', {
+      const response = await axios.get('http://localhost:5000/api/users/team-members', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUsers(response.data);
+      setUsers(response.data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
+    } finally {
+      setUsersLoading(false);
     }
   };
 
@@ -287,12 +292,20 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose, onTa
                 onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
                 onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
               >
-                <option value="">Select assignee</option>
-                {users.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name}
-                  </option>
-                ))}
+                {usersLoading ? (
+                  <option value="">Loading assignees...</option>
+                ) : users.length === 0 ? (
+                  <option value="">No assignees available</option>
+                ) : (
+                  <>
+                    <option value="">Select assignee</option>
+                    {users.map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.first_name} {user.last_name}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
             

@@ -23,9 +23,10 @@ interface Task {
 interface TaskViewProps {
   projectId: number;
   onClose: () => void;
+  canCreate?: boolean;
 }
 
-const TaskView: React.FC<TaskViewProps> = ({ projectId, onClose }) => {
+const TaskView: React.FC<TaskViewProps> = ({ projectId, onClose, canCreate = false }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,7 +65,7 @@ const TaskView: React.FC<TaskViewProps> = ({ projectId, onClose }) => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/users/managers', {
+      const response = await axios.get('http://localhost:5000/api/users/team-members', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(response.data);
@@ -400,20 +401,22 @@ const TaskView: React.FC<TaskViewProps> = ({ projectId, onClose }) => {
             <p style={{ margin: '4px 0 0 0', color: '#6b7280' }}>Project #{projectId} Tasks</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              onClick={() => setShowNewTaskForm(true)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              + New Task
-            </button>
+            {canCreate && (
+              <button
+                onClick={() => setShowNewTaskForm(true)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                + New Task
+              </button>
+            )}
             <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' }}>×</button>
           </div>
         </div>
@@ -461,8 +464,8 @@ const TaskView: React.FC<TaskViewProps> = ({ projectId, onClose }) => {
         </div>
       </div>
       
-      {/* New Task Form */}
-      {showNewTaskForm && (
+  {/* New Task Form */}
+  {canCreate && showNewTaskForm && (
         <div style={{
           position: 'absolute',
           top: 0,

@@ -4,6 +4,51 @@ const { authenticateToken, authorizeRole } = require('../middleware/auth');
 const { pool } = require('../config/database');
 const router = express.Router();
 
+// Get tasks based on role and permissions
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const { project_id } = req.query;
+    
+    let query = `
+      SELECT t.id, t.title as name, t.description, t.status, t.assigned_to, t.project_id,
+             p.name as project_name, p.manager_id,
+             u.first_name || ' ' || u.last_name as assigned_to_name
+      FROM tasks t
+      JOIN projects p ON t.project_id = p.id
+      LEFT JOIN users u ON t.assigned_to = u.id
+    `;
+    
+    const params = [];
+    const conditions = [];
+    
+    // Role-based filtering
+    if (req.user.role === 'project_manager') {
+      conditions.push('p.manager_id = $' + (params.length + 1));
+      params.push(req.user.id);
+    } else if (req.user.role === 'team_member') {
+      conditions.push('t.assigned_to = $' + (params.length + 1));
+      params.push(req.user.id);
+    }
+    
+    if (project_id) {
+      conditions.push('t.project_id = $' + (params.length + 1));
+      params.push(project_id);
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    query += ' ORDER BY t.title';
+    
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get all tasks for a project with full details
 router.get('/project/:projectId', authenticateToken, async (req, res) => {
   try {

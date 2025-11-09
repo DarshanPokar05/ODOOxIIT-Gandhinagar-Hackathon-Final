@@ -18,6 +18,19 @@ router.get('/managers', authenticateToken, async (req, res) => {
   }
 });
 
+// Get all active team members (used for assignee dropdowns)
+router.get('/team-members', authenticateToken, async (req, res) => {
+  try {
+    const members = await pool.query(
+      "SELECT id, first_name, last_name, email FROM users WHERE role = 'team_member' AND status = 'active' ORDER BY first_name"
+    );
+    res.json(members.rows);
+  } catch (error) {
+    console.error('Error fetching team members:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get all users with search
 router.get('/', authenticateToken, authorizeRole(['admin']), async (req, res) => {
   try {

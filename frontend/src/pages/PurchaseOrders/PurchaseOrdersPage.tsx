@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import CreatePurchaseOrderModal from './CreatePurchaseOrderModal';
-import RoleProtectedRoute from '../../components/RoleProtectedRoute';
+import Sidebar from '../../components/Sidebar/Sidebar';
+import ProfileDropdown from '../../components/ProfileDropdown/ProfileDropdown';
 
 interface PurchaseOrder {
   id: number;
@@ -94,29 +95,48 @@ const PurchaseOrdersPage: React.FC = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <RoleProtectedRoute allowedRoles={['admin', 'project_manager']}>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div style={{ display: 'flex', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+      <Sidebar activeSection="purchase-orders" onSectionChange={() => {}} />
+      
+      <div style={{ marginLeft: '256px', flex: 1 }}>
+        <div style={{
+          backgroundColor: 'white',
+          padding: '20px 32px',
+          borderBottom: '1px solid #e2e8f0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
           <div>
-            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1e293b', margin: '0 0 8px 0' }}>Purchase Orders</h1>
-            <p style={{ color: '#64748b', fontSize: '16px', margin: 0 }}>Manage vendor purchase orders and track project costs</p>
+            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: '#1e293b' }}>Purchase Orders</h1>
+            <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '14px' }}>Manage vendor purchase orders and track project costs</p>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            style={{
-              padding: '12px 20px',
-              background: 'linear-gradient(135deg, rgb(160, 80, 140) 0%, rgb(140, 60, 120) 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
-            + Create Purchase Order
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              style={{
+                padding: '10px 18px',
+                background: 'linear-gradient(135deg, #a0508c 0%, #8c3c78 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 4px 10px rgba(136, 64, 122, 0.12)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}
+            >
+              <span style={{ fontSize: '18px', lineHeight: 1 }}>＋</span>
+              New Purchase Order
+            </button>
+            <ProfileDropdown />
+          </div>
         </div>
+        
+        <div style={{ padding: '32px' }}>
 
         <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
@@ -209,8 +229,9 @@ const PurchaseOrdersPage: React.FC = () => {
           onClose={() => setShowCreateModal(false)}
           onOrderCreated={fetchPurchaseOrders}
         />
+        </div>
       </div>
-    </RoleProtectedRoute>
+    </div>
   );
 };
 

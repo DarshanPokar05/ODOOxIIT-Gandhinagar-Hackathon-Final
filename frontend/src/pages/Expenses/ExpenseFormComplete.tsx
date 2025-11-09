@@ -44,12 +44,13 @@ const ExpenseFormComplete: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const categories = ['Travel', 'Software', 'Hardware', 'Meals', 'Other'];
+  const [categories, setCategories] = useState<string[]>([]);
   const currencies = ['USD', 'EUR', 'INR'];
 
   useEffect(() => {
     fetchProjects();
     fetchCustomers();
+    fetchCategories();
     if (isEdit) {
       fetchExpense();
     }
@@ -70,6 +71,7 @@ const ExpenseFormComplete: React.FC = () => {
       const response = await axios.get('http://localhost:5000/api/projects', {
         headers: { Authorization: `Bearer ${token}` }
       });
+
       setProjects(response.data);
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -97,6 +99,20 @@ const ExpenseFormComplete: React.FC = () => {
       setCustomers(response.data);
     } catch (error) {
       console.error('Error fetching customers:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/expenses/categories/list', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      // Fallback to default categories
+      setCategories(['Travel', 'Software', 'Hardware', 'Meals', 'Other']);
     }
   };
 
@@ -131,7 +147,7 @@ const ExpenseFormComplete: React.FC = () => {
     if (!formData.project_id) newErrors.project_id = 'Project is required';
     if (!formData.expense_date) newErrors.expense_date = 'Date is required';
     if (!formData.category) newErrors.category = 'Category is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
+    if (!formData.description || !formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       newErrors.amount = 'Amount must be greater than 0';
     }
@@ -146,6 +162,8 @@ const ExpenseFormComplete: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent, action: 'save' | 'submit' = 'save') => {
     e.preventDefault();
     
+
+    
     if (!validateForm()) return;
 
     setLoading(true);
@@ -157,9 +175,11 @@ const ExpenseFormComplete: React.FC = () => {
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'receipt_file' && value instanceof File) {
           submitData.append('receipt', value);
-        } else if (value !== null && value !== '' && typeof value !== 'boolean') {
-          submitData.append(key, value.toString());
+        } else if (key === 'receipt_file') {
+          // Skip if no file
         } else if (typeof value === 'boolean') {
+          submitData.append(key, value.toString());
+        } else if (value !== null && value !== undefined && value !== '') {
           submitData.append(key, value.toString());
         }
       });
@@ -191,6 +211,7 @@ const ExpenseFormComplete: React.FC = () => {
       navigate('/expenses');
     } catch (error: any) {
       console.error('Error saving expense:', error);
+      console.error('Error response:', error.response?.data);
       if (error.response?.data?.message) {
         setErrors({ general: error.response.data.message });
       } else {
@@ -255,8 +276,14 @@ const ExpenseFormComplete: React.FC = () => {
 
 
       {errors.general && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-800">{errors.general}</p>
+        <div style={{
+          marginBottom: '24px',
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: '8px',
+          padding: '16px'
+        }}>
+          <p style={{ color: '#991b1b', margin: 0 }}>{errors.general}</p>
         </div>
       )}
 
@@ -299,14 +326,25 @@ const ExpenseFormComplete: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                 Task (Optional)
               </label>
               <select
                 name="task_id"
                 value={formData.task_id}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{
+                  width: '100%',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  backgroundColor: 'white',
+                  color: '#1e293b',
+                  outline: 'none'
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
               >
                 <option value="">Select Task</option>
                 {tasks.map(task => (
@@ -316,7 +354,7 @@ const ExpenseFormComplete: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                 Expense Date *
               </label>
               <input
@@ -325,15 +363,24 @@ const ExpenseFormComplete: React.FC = () => {
                 value={formData.expense_date}
                 onChange={handleChange}
                 required
-                className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.expense_date ? 'border-red-300' : 'border-gray-300'
-                }`}
+                style={{
+                  width: '100%',
+                  border: errors.expense_date ? '1px solid #f87171' : '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  backgroundColor: 'white',
+                  color: '#1e293b',
+                  outline: 'none'
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                onBlur={(e) => e.target.style.borderColor = errors.expense_date ? '#f87171' : '#e2e8f0'}
               />
-              {errors.expense_date && <p className="text-red-500 text-sm mt-1">{errors.expense_date}</p>}
+              {errors.expense_date && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.expense_date}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                 Category *
               </label>
               <select
@@ -341,20 +388,29 @@ const ExpenseFormComplete: React.FC = () => {
                 value={formData.category}
                 onChange={handleChange}
                 required
-                className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.category ? 'border-red-300' : 'border-gray-300'
-                }`}
+                style={{
+                  width: '100%',
+                  border: errors.category ? '1px solid #f87171' : '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  backgroundColor: 'white',
+                  color: '#1e293b',
+                  outline: 'none'
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                onBlur={(e) => e.target.style.borderColor = errors.category ? '#f87171' : '#e2e8f0'}
               >
                 <option value="">Select Category</option>
                 {categories.map(category => (
                   <option key={category} value={category}>{category}</option>
                 ))}
               </select>
-              {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
+              {errors.category && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.category}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                 Amount *
               </label>
               <input
@@ -364,22 +420,42 @@ const ExpenseFormComplete: React.FC = () => {
                 value={formData.amount}
                 onChange={handleChange}
                 required
-                className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.amount ? 'border-red-300' : 'border-gray-300'
-                }`}
+                style={{
+                  width: '100%',
+                  border: errors.amount ? '1px solid #f87171' : '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  backgroundColor: 'white',
+                  color: '#1e293b',
+                  outline: 'none'
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                onBlur={(e) => e.target.style.borderColor = errors.amount ? '#f87171' : '#e2e8f0'}
               />
-              {errors.amount && <p className="text-red-500 text-sm mt-1">{errors.amount}</p>}
+              {errors.amount && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.amount}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                 Currency
               </label>
               <select
                 name="currency"
                 value={formData.currency}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{
+                  width: '100%',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  fontSize: '14px',
+                  backgroundColor: 'white',
+                  color: '#1e293b',
+                  outline: 'none'
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
               >
                 {currencies.map(currency => (
                   <option key={currency} value={currency}>{currency}</option>
@@ -389,7 +465,7 @@ const ExpenseFormComplete: React.FC = () => {
 
             {formData.currency !== 'USD' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                   Exchange Rate to USD
                 </label>
                 <input
@@ -398,14 +474,25 @@ const ExpenseFormComplete: React.FC = () => {
                   name="exchange_rate"
                   value={formData.exchange_rate}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    width: '100%',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    fontSize: '14px',
+                    backgroundColor: 'white',
+                    color: '#1e293b',
+                    outline: 'none'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                 />
               </div>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
               Description *
             </label>
             <textarea
@@ -414,16 +501,26 @@ const ExpenseFormComplete: React.FC = () => {
               onChange={handleChange}
               required
               rows={3}
-              className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.description ? 'border-red-300' : 'border-gray-300'
-              }`}
+              style={{
+                width: '100%',
+                border: errors.description ? '1px solid #f87171' : '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                backgroundColor: 'white',
+                color: '#1e293b',
+                outline: 'none',
+                resize: 'vertical'
+              }}
               placeholder="Provide detailed description of the expense..."
+              onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+              onBlur={(e) => e.target.style.borderColor = errors.description ? '#f87171' : '#e2e8f0'}
             />
-            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+            {errors.description && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.description}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
               Receipt Upload
             </label>
             <input
@@ -431,30 +528,41 @@ const ExpenseFormComplete: React.FC = () => {
               name="receipt_file"
               onChange={handleChange}
               accept="image/*,.pdf"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{
+                width: '100%',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                backgroundColor: 'white',
+                color: '#1e293b',
+                outline: 'none'
+              }}
+              onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
             />
-            <p className="text-sm text-gray-500 mt-1">
+            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
               Upload receipt (JPG, PNG, PDF). Required for expenses over $100.
             </p>
           </div>
 
-          <div className="border-t pt-6">
-            <div className="flex items-center mb-4">
+          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
               <input
                 type="checkbox"
                 name="billable"
                 checked={formData.billable}
                 onChange={handleChange}
-                className="mr-2"
+                style={{ marginRight: '8px', accentColor: 'rgb(160, 80, 140)' }}
               />
-              <label className="text-sm font-medium text-gray-700">
+              <label style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>
                 Billable to client
               </label>
             </div>
 
             {formData.billable && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
                   Customer *
                 </label>
                 <select
@@ -462,9 +570,18 @@ const ExpenseFormComplete: React.FC = () => {
                   value={formData.billable_to_customer_id}
                   onChange={handleChange}
                   required={formData.billable}
-                  className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.billable_to_customer_id ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  style={{
+                    width: '100%',
+                    border: errors.billable_to_customer_id ? '1px solid #f87171' : '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    fontSize: '14px',
+                    backgroundColor: 'white',
+                    color: '#1e293b',
+                    outline: 'none'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = 'rgb(160, 80, 140)'}
+                  onBlur={(e) => e.target.style.borderColor = errors.billable_to_customer_id ? '#f87171' : '#e2e8f0'}
                 >
                   <option value="">Select Customer</option>
                   {customers.map(customer => (
@@ -472,7 +589,7 @@ const ExpenseFormComplete: React.FC = () => {
                   ))}
                 </select>
                 {errors.billable_to_customer_id && (
-                  <p className="text-red-500 text-sm mt-1">{errors.billable_to_customer_id}</p>
+                  <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{errors.billable_to_customer_id}</p>
                 )}
               </div>
             )}
@@ -504,15 +621,13 @@ const ExpenseFormComplete: React.FC = () => {
                 padding: '12px 20px',
                 border: 'none',
                 borderRadius: '8px',
-                backgroundColor: '#64748b',
+                backgroundColor: '#6b7280',
                 color: 'white',
                 fontSize: '14px',
-                fontWeight: '500',
+                fontWeight: '600',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.5 : 1
+                opacity: loading ? 0.6 : 1
               }}
-              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#475569')}
-              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#64748b')}
             >
               {loading ? 'Saving...' : 'Save Draft'}
             </button>
@@ -524,13 +639,13 @@ const ExpenseFormComplete: React.FC = () => {
                 padding: '12px 20px',
                 border: 'none',
                 borderRadius: '8px',
-                background: 'linear-gradient(135deg, rgb(160, 80, 140) 0%, rgb(140, 60, 120) 100%)',
+                background: 'linear-gradient(135deg, #a0508c 0%, #8c3c78 100%)',
                 color: 'white',
                 fontSize: '14px',
-                fontWeight: '500',
+                fontWeight: '600',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.5 : 1,
-                boxShadow: '0 2px 4px rgba(160, 80, 140, 0.2)'
+                opacity: loading ? 0.6 : 1,
+                boxShadow: '0 6px 18px rgba(140, 60, 120, 0.14)'
               }}
             >
               {loading ? 'Submitting...' : 'Save & Submit'}

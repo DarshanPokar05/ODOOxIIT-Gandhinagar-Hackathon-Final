@@ -156,20 +156,20 @@ const ExpensesPageComplete: React.FC = () => {
             <Link
               to="/expenses/new"
               style={{
-                padding: '12px 20px',
-                background: 'linear-gradient(135deg, rgb(160, 80, 140) 0%, rgb(140, 60, 120) 100%)',
+                padding: '10px 18px',
+                background: 'linear-gradient(135deg, #a0508c 0%, #8c3c78 100%)',
                 color: 'white',
                 textDecoration: 'none',
                 borderRadius: '8px',
                 fontSize: '14px',
-                fontWeight: '500',
-                boxShadow: '0 2px 4px rgba(160, 80, 140, 0.2)',
+                fontWeight: '600',
+                boxShadow: '0 4px 10px rgba(136, 64, 122, 0.12)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '10px'
               }}
             >
-              <span>+</span>
+              <span style={{ fontSize: '18px', lineHeight: 1 }}>＋</span>
               New Expense
             </Link>
             <ProfileDropdown />
@@ -304,9 +304,9 @@ const ExpensesPageComplete: React.FC = () => {
                         </span>
                       )}
                       {expense.receipt_url && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '500', backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                        <a href={expense.receipt_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '500', backgroundColor: '#dbeafe', color: '#1e40af', textDecoration: 'none' }}>
                           📎 Receipt
-                        </span>
+                        </a>
                       )}
                       {expense.receipt_required && !expense.receipt_url && (
                         <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '500', backgroundColor: '#fecaca', color: '#dc2626' }}>

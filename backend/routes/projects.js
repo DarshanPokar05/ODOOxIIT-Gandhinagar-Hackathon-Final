@@ -41,19 +41,31 @@ router.post('/', authenticateToken, upload.single('image'), async (req, res) => 
   }
 });
 
-// Get all projects
+// Get projects based on role
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const projects = await pool.query(`
+    let query = `
       SELECT p.*, u.first_name || ' ' || u.last_name as manager_name,
              COUNT(t.id) as task_count
       FROM projects p
       LEFT JOIN users u ON p.manager_id = u.id
       LEFT JOIN tasks t ON p.id = t.project_id
-      GROUP BY p.id, u.first_name, u.last_name
-      ORDER BY p.created_at DESC
-    `);
-
+    `;
+    
+    const params = [];
+    
+    // Role-based filtering
+    if (req.user.role === 'project_manager') {
+      query += ' WHERE p.manager_id = $1';
+      params.push(req.user.id);
+    } else if (req.user.role === 'team_member') {
+      query += ' WHERE p.id IN (SELECT DISTINCT project_id FROM tasks WHERE assigned_to = $1)';
+      params.push(req.user.id);
+    }
+    
+    query += ' GROUP BY p.id, u.first_name, u.last_name ORDER BY p.created_at DESC';
+    
+    const projects = await pool.query(query, params);
     res.json(projects.rows);
   } catch (error) {
     console.error('Error fetching projects:', error);

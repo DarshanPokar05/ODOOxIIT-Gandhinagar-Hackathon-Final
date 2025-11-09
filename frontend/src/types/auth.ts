@@ -3,7 +3,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'project_manager' | 'team_member';
+  role: 'admin' | 'project_manager' | 'team_member' | 'finance_manager';
 }
 
 export interface AuthState {

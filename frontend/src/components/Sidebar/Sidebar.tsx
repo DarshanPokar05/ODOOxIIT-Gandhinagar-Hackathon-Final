@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
@@ -8,24 +9,141 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [showProductsDropdown, setShowProductsDropdown] = useState(false);
   
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'projects', label: 'Projects', icon: '📁' },
-    { id: 'tasks', label: 'Tasks', icon: '✓' },
-    { id: 'analytics', label: 'Analytics', icon: '📈' },
-  ];
+  const getDashboardRoute = () => {
+    switch (user?.role) {
+      case 'admin': return '/dashboard/admin';
+      case 'project_manager': return '/dashboard/project-manager';
+      case 'finance_manager': return '/dashboard/finance-manager';
+      default: return '/dashboard/team-member';
+    }
+  };
+  
+  const handleNavigation = (section: string) => {
+    onSectionChange(section);
+    
+    switch (section) {
+      case 'dashboard':
+        navigate(getDashboardRoute());
+        break;
 
-  const settingsItems = [
-    ...(user && ['admin', 'finance_manager'].includes(user.role) ? [{ id: 'sales-orders', label: 'Sales Orders', icon: '📋' }] : []),
-    ...(user && ['admin', 'project_manager'].includes(user.role) ? [{ id: 'purchase-orders', label: 'Purchase Orders', icon: '🛒' }] : []),
-    ...(user && ['admin', 'finance_manager'].includes(user.role) ? [{ id: 'invoices', label: 'Customer Invoices', icon: '📄' }] : []),
-    ...(user && ['admin', 'project_manager'].includes(user.role) ? [{ id: 'vendor-bills', label: 'Vendor Bills', icon: '📜' }] : []),
-    { id: 'expenses', label: 'Expenses', icon: '💰' },
-    { id: 'users', label: 'Manage Users', icon: '👥' },
-    { id: 'products', label: 'Products', icon: '📦' },
-  ];
+      case 'tasks':
+        // Navigate to dashboard and set tasks section
+        switch (user?.role) {
+          case 'admin':
+            navigate('/dashboard/admin');
+            break;
+          case 'project_manager':
+            navigate('/dashboard/project-manager');
+            break;
+          default:
+            navigate('/dashboard/team-member');
+            break;
+        }
+        break;
+      case 'analytics':
+        // TODO: Add analytics page route
+        break;
+      case 'sales-orders':
+        // TODO: Add sales orders page route
+        break;
+      case 'purchase-orders':
+        navigate('/purchase-orders');
+        break;
+      case 'invoices':
+        // TODO: Add invoices page route
+        break;
+      case 'vendor-bills':
+        // TODO: Add vendor bills page route
+        break;
+      case 'expenses':
+        navigate('/expenses');
+        break;
+      case 'users':
+        // TODO: Add users management page route
+        break;
+      case 'products':
+        // TODO: Add products page route
+        break;
+      default:
+        break;
+    }
+  };
+  
+  const getMenuItems = () => {
+    const baseItems = [
+      { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    ];
+    
+    if (user?.role === 'admin') {
+      return [
+        ...baseItems,
+        { id: 'tasks', label: 'Tasks', icon: '✓' },
+        { id: 'analytics', label: 'Analytics', icon: '📈' },
+      ];
+    }
+    
+    if (user?.role === 'project_manager') {
+      return [
+        ...baseItems,
+        { id: 'tasks', label: 'Team Tasks', icon: '✓' },
+      ];
+    }
+    
+    if (user?.role === 'team_member') {
+      return [
+        ...baseItems,
+        { id: 'tasks', label: 'My Tasks', icon: '✓' },
+      ];
+    }
+    
+    if (user?.role === 'finance_manager') {
+      return [
+        ...baseItems,
+        { id: 'analytics', label: 'Finance Reports', icon: '📈' },
+      ];
+    }
+    
+    return baseItems;
+  };
+
+  const getSettingsItems = () => {
+    const items = [];
+    
+    if (user?.role === 'admin') {
+      items.push(
+        { id: 'sales-orders', label: 'Sales Orders', icon: '📋' },
+        { id: 'purchase-orders', label: 'Purchase Orders', icon: '🛒' },
+        { id: 'invoices', label: 'Customer Invoices', icon: '📄' },
+        { id: 'vendor-bills', label: 'Vendor Bills', icon: '📜' },
+        { id: 'expenses', label: 'Expenses', icon: '💰' },
+        { id: 'users', label: 'Manage Users', icon: '👥' },
+        { id: 'products', label: 'Products', icon: '📦' }
+      );
+    } else if (user?.role === 'project_manager') {
+      items.push(
+        { id: 'purchase-orders', label: 'Purchase Orders', icon: '🛒' },
+        { id: 'expenses', label: 'Team Expenses', icon: '💰' }
+      );
+    } else if (user?.role === 'team_member') {
+      items.push(
+        { id: 'expenses', label: 'My Expenses', icon: '💰' }
+      );
+    } else if (user?.role === 'finance_manager') {
+      items.push(
+        { id: 'invoices', label: 'Invoices', icon: '📄' },
+        { id: 'vendor-bills', label: 'Vendor Bills', icon: '📜' },
+        { id: 'expenses', label: 'Expense Approvals', icon: '💰' }
+      );
+    }
+    
+    return items;
+  };
+  
+  const menuItems = getMenuItems();
+  const settingsItems = getSettingsItems();
 
   return (
     <div style={{ 
@@ -84,7 +202,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
         {menuItems.map(item => (
           <div
             key={item.id}
-            onClick={() => onSectionChange(item.id)}
+            onClick={() => handleNavigation(item.id)}
             style={{
               margin: '0 12px 4px 12px',
               padding: '12px 16px',
@@ -133,7 +251,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
         {settingsItems.map(item => (
           <div
             key={item.id}
-            onClick={() => onSectionChange(item.id)}
+            onClick={() => handleNavigation(item.id)}
             style={{
               margin: '0 12px 4px 12px',
               padding: '12px 16px',

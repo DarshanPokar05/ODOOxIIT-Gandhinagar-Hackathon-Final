@@ -18,7 +18,6 @@ const salesOrdersRoutes = require('./routes/sales-orders');
 const purchaseOrdersRoutes = require('./routes/purchase-orders');
 const invoicesRoutes = require('./routes/invoices');
 const vendorBillsRoutes = require('./routes/vendor-bills');
-const expensesRoutes = require('./routes/expenses-complete');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,7 +40,16 @@ app.use('/api/sales-orders', salesOrdersRoutes);
 app.use('/api/purchase-orders', purchaseOrdersRoutes);
 app.use('/api/invoices', invoicesRoutes);
 app.use('/api/vendor-bills', vendorBillsRoutes);
-app.use('/api/expenses', expensesRoutes);
+const fs = require('fs');
+const expensesRoutesReal = require('./routes/expenses');
+
+// Ensure uploads/receipts directory exists
+const uploadsPath = path.join(__dirname, 'uploads', 'receipts');
+if (!fs.existsSync(uploadsPath)) {
+  fs.mkdirSync(uploadsPath, { recursive: true });
+}
+
+app.use('/api/expenses', expensesRoutesReal);
 
 // Health check
 app.get('/api/health', (req, res) => {

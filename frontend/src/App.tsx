@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import ProjectManagerDashboard from './pages/ProjectManagerDashboard';
 import TeamMemberDashboard from './pages/TeamMemberDashboard';
+import FinanceManagerDashboard from './pages/FinanceManagerDashboard';
 import Unauthorized from './pages/Unauthorized';
 import PurchaseOrdersPage from './pages/PurchaseOrders/PurchaseOrdersPage';
 import ExpensesPage from './pages/Expenses/ExpensesPage';
@@ -16,12 +17,22 @@ import ExpenseDetail from './pages/Expenses/ExpenseDetail';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
+  
+  const getDashboardRoute = () => {
+    if (!user) return '/login';
+    switch (user.role) {
+      case 'admin': return '/dashboard/admin';
+      case 'project_manager': return '/dashboard/project-manager';
+      case 'finance_manager': return '/dashboard/finance-manager';
+      default: return '/dashboard/team-member';
+    }
+  };
 
   return (
     <Routes>
-      <Route path="/signup" element={!isAuthenticated ? <Signup /> : <Navigate to={`/dashboard/${user?.role === 'admin' ? 'admin' : user?.role === 'project_manager' ? 'project-manager' : 'team-member'}`} />} />
+      <Route path="/signup" element={!isAuthenticated ? <Signup /> : <Navigate to={getDashboardRoute()} />} />
       <Route path="/verify-otp" element={!isAuthenticated ? <VerifyOTP /> : <Navigate to="/login" />} />
-      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to={`/dashboard/${user?.role === 'admin' ? 'admin' : user?.role === 'project_manager' ? 'project-manager' : 'team-member'}`} />} />
+      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to={getDashboardRoute()} />} />
       
       <Route path="/dashboard/admin" element={
         <ProtectedRoute allowedRoles={['admin']}>
@@ -38,6 +49,12 @@ const AppRoutes: React.FC = () => {
       <Route path="/dashboard/team-member" element={
         <ProtectedRoute allowedRoles={['team_member', 'project_manager', 'admin']}>
           <TeamMemberDashboard />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/dashboard/finance-manager" element={
+        <ProtectedRoute allowedRoles={['finance_manager', 'admin']}>
+          <FinanceManagerDashboard />
         </ProtectedRoute>
       } />
       
@@ -72,7 +89,7 @@ const AppRoutes: React.FC = () => {
       } />
       
       <Route path="/unauthorized" element={<Unauthorized />} />
-      <Route path="/" element={<Navigate to={isAuthenticated ? `/dashboard/${user?.role === 'admin' ? 'admin' : user?.role === 'project_manager' ? 'project-manager' : 'team-member'}` : "/login"} />} />
+      <Route path="/" element={<Navigate to={isAuthenticated ? getDashboardRoute() : "/login"} />} />
     </Routes>
   );
 };
